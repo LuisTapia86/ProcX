@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n';
 import AppLayout from '@/components/AppLayout';
 import { createClient } from '@/lib/supabase/client';
-import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 interface AdminChallengesPageProps {
   challenges: Tables<'challenge_catalog'>[];
@@ -68,7 +69,7 @@ export default function AdminChallengesPage({ challenges }: AdminChallengesPageP
     setError('');
 
     try {
-      const supabase = createClient();
+      const supabase: SupabaseClient<Database> = createClient();
 
       if (editingId) {
         const updateData: TablesUpdate<'challenge_catalog'> = {
@@ -119,7 +120,7 @@ export default function AdminChallengesPage({ challenges }: AdminChallengesPageP
 
     setLoading(true);
     try {
-      const supabase = createClient();
+      const supabase: SupabaseClient<Database> = createClient();
       const { error: deleteError } = await supabase
         .from('challenge_catalog')
         .delete()
