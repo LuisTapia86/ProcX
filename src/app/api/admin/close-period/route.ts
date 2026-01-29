@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
+import type { TablesInsert } from '@/types/database';
 
 // Prize distribution percentages
 const PRIZE_DISTRIBUTION = {
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate winners with tie-breaking
-    const winners = [];
+    const winners: TablesInsert<'winners'>[] = [];
     let currentRank = 1;
     let i = 0;
 

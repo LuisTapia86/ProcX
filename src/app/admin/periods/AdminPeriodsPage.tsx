@@ -7,8 +7,18 @@ import AppLayout from '@/components/AppLayout';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database';
 
+interface WinnerWithProfile {
+  id: string;
+  user_id: string;
+  rank: number;
+  total_points: number;
+  prize_amount_mxn: number;
+  payout_status: 'pending' | 'processing' | 'paid' | 'failed';
+  profiles: { full_name: string | null; email: string };
+}
+
 interface PeriodWithWinners extends Tables<'reward_periods'> {
-  winners: (Tables<'winners'> & { profiles: { full_name: string | null; email: string } })[];
+  winners: WinnerWithProfile[];
 }
 
 interface AdminPeriodsPageProps {

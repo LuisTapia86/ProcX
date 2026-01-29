@@ -52,14 +52,17 @@ export async function POST(request: NextRequest) {
         if (userId && subscriptionId) {
           // Get subscription details
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const currentItem = subscription.items.data[0];
+          const periodStart = currentItem?.current_period_start;
+          const periodEnd = currentItem?.current_period_end;
 
           await serviceClient
             .from('subscriptions')
             .update({
               stripe_subscription_id: subscriptionId,
               status: 'active',
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+              current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
             })
             .eq('stripe_customer_id', customerId);
         }
@@ -69,6 +72,9 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
+        const currentItem = subscription.items.data[0];
+        const periodStart = currentItem?.current_period_start;
+        const periodEnd = currentItem?.current_period_end;
 
         const status = subscription.status === 'active' ? 'active' :
                       subscription.status === 'past_due' ? 'past_due' :
@@ -78,8 +84,8 @@ export async function POST(request: NextRequest) {
           .from('subscriptions')
           .update({
             status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+            current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
           })
           .eq('stripe_customer_id', customerId);
         break;

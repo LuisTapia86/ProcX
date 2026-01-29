@@ -37,6 +37,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       subscriptions: {
         Row: {
@@ -72,6 +73,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       challenge_catalog: {
         Row: {
@@ -110,6 +112,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       user_challenges: {
         Row: {
@@ -157,6 +160,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'user_challenges_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'challenge_catalog';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_challenges_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       checkins: {
         Row: {
@@ -186,6 +205,7 @@ export type Database = {
           points_earned?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       point_events: {
         Row: {
@@ -218,6 +238,7 @@ export type Database = {
           period_id?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       reward_periods: {
         Row: {
@@ -265,6 +286,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       winners: {
         Row: {
@@ -309,6 +331,22 @@ export type Database = {
           paid_at?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'winners_period_id_fkey';
+            columns: ['period_id'];
+            isOneToOne: false;
+            referencedRelation: 'reward_periods';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'winners_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       kyc_submissions: {
         Row: {
@@ -362,6 +400,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       payout_requests: {
         Row: {
@@ -403,6 +442,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       admin_audit: {
         Row: {
@@ -441,6 +481,7 @@ export type Database = {
           user_agent?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       rate_limits: {
         Row: {
@@ -464,7 +505,11 @@ export type Database = {
           request_count?: number;
           window_start?: string;
         };
+        Relationships: [];
       };
+    };
+    Views: {
+      [_ in never]: never;
     };
     Functions: {
       is_admin: {
@@ -484,9 +529,108 @@ export type Database = {
         Returns: number;
       };
     };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 };
 
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type InsertTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
-export type UpdateTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+type PublicSchema = Database[Extract<keyof Database, 'public'>];
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema['Tables'] & PublicSchema['Views'])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+        Database[PublicTableNameOrOptions['schema']]['Views'])
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+      Database[PublicTableNameOrOptions['schema']]['Views'])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] &
+        PublicSchema['Views'])
+    ? (PublicSchema['Tables'] &
+        PublicSchema['Views'])[PublicTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema['Tables']
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema['Tables']
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema['Enums']
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions['schema']]['Enums']
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
+    ? PublicSchema['Enums'][PublicEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema['CompositeTypes']
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema['CompositeTypes']
+    ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+    : never;

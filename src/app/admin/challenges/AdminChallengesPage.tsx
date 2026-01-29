@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n';
 import AppLayout from '@/components/AppLayout';
 import { createClient } from '@/lib/supabase/client';
-import type { Tables } from '@/types/database';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 interface AdminChallengesPageProps {
   challenges: Tables<'challenge_catalog'>[];
@@ -70,27 +70,37 @@ export default function AdminChallengesPage({ challenges }: AdminChallengesPageP
     try {
       const supabase = createClient();
 
-      const data = {
-        name_es: nameEs,
-        name_en: nameEn,
-        description_es: descEs || null,
-        description_en: descEn || null,
-        difficulty,
-        points_per_checkin: POINTS_MAP[difficulty],
-        is_active: isActive,
-      };
-
       if (editingId) {
+        const updateData: TablesUpdate<'challenge_catalog'> = {
+          name_es: nameEs,
+          name_en: nameEn,
+          description_es: descEs || null,
+          description_en: descEn || null,
+          difficulty,
+          points_per_checkin: POINTS_MAP[difficulty],
+          is_active: isActive,
+        };
+
         const { error: updateError } = await supabase
           .from('challenge_catalog')
-          .update(data)
+          .update(updateData)
           .eq('id', editingId);
 
         if (updateError) throw updateError;
       } else {
+        const insertData: TablesInsert<'challenge_catalog'> = {
+          name_es: nameEs,
+          name_en: nameEn,
+          description_es: descEs || null,
+          description_en: descEn || null,
+          difficulty,
+          points_per_checkin: POINTS_MAP[difficulty],
+          is_active: isActive,
+        };
+
         const { error: insertError } = await supabase
           .from('challenge_catalog')
-          .insert(data);
+          .insert(insertData);
 
         if (insertError) throw insertError;
       }
