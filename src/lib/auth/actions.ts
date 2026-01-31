@@ -114,7 +114,14 @@ export async function signUpAction(
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
+    let supabase;
+    try {
+      supabase = await createServerSupabaseClient();
+    } catch (envError) {
+      console.error('[Signup] Supabase client error:', envError);
+      return { success: false, error: 'Server configuration error. Please try again later.' };
+    }
+
     const headersList = await headers();
     const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -199,7 +206,13 @@ export async function signInAction(
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
+    let supabase;
+    try {
+      supabase = await createServerSupabaseClient();
+    } catch (envError) {
+      console.error('[Login] Supabase client error:', envError);
+      return { success: false, error: 'Server configuration error. Please try again later.' };
+    }
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
@@ -226,7 +239,14 @@ export async function signInAction(
  */
 export async function signOutAction(): Promise<AuthResult> {
   try {
-    const supabase = await createServerSupabaseClient();
+    let supabase;
+    try {
+      supabase = await createServerSupabaseClient();
+    } catch (envError) {
+      console.error('[Logout] Supabase client error:', envError);
+      return { success: false, error: 'Server configuration error. Please try again later.' };
+    }
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
