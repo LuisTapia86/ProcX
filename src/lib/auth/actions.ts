@@ -1,11 +1,11 @@
 'use server';
 
-// Force Node.js runtime for Server Actions
 export const runtime = 'nodejs';
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
+import type { Database } from '@/types/database';
 
 // Server-only config - never exposed to client
 const EMAIL_CONFIRMATION_ENABLED = process.env.ENABLE_EMAIL_CONFIRMATION === 'true';
@@ -20,11 +20,24 @@ export interface AuthResult {
 }
 
 /**
+ * Create Supabase client for Server Actions
+ */
+function createSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase configuration missing');
+  }
+
+  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+}
+
+/**
  * Get client IP from headers
  */
 async function getClientIP(): Promise<string> {
   const headersList = await headers();
-  // Check common headers for real IP (behind proxy/load balancer)
   const forwarded = headersList.get('x-forwarded-for');
   if (forwarded) {
     return forwarded.split(',')[0].trim();
@@ -40,7 +53,6 @@ async function getClientIP(): Promise<string> {
  * Verify CAPTCHA token server-side
  */
 async function verifyCaptcha(token: string | null): Promise<{ success: boolean; error?: string }> {
-  // Skip if CAPTCHA is disabled
   if (!CAPTCHA_ENABLED) {
     return { success: true };
   }
@@ -80,32 +92,18 @@ async function verifyCaptcha(token: string | null): Promise<{ success: boolean; 
 
 /**
  * Server Action: Sign up a new user
- * Handles rate limiting, CAPTCHA, and email confirmation logic server-side
  */
 export async function signUpAction(
   email: string,
   password: string,
   captchaToken?: string | null
 ): Promise<AuthResult> {
-  // ENV CHECK - First line logging
-  console.error('ENV_CHECK_SUPABASE_VARS', {
-    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_URL: !!process.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
-    NODE_ENV: process.env.NODE_ENV,
-    VERCEL_ENV: process.env.VERCEL_ENV,
-  });
-
-  // Rate limit check (by IP + action)
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`signup:${clientIP}`);
   if (!rateLimitResult.success) {
-    console.warn('[Rate Limit] Signup blocked for IP:', clientIP);
     return { success: false, error: rateLimitResult.error };
   }
 
-  // Verify CAPTCHA (if enabled)
   const captchaResult = await verifyCaptcha(captchaToken ?? null);
   if (!captchaResult.success) {
     return { success: false, error: captchaResult.error };
@@ -113,7 +111,6 @@ export async function signUpAction(
 
   const trimmedEmail = email.trim().toLowerCase();
 
-  // Server-side validation
   if (!trimmedEmail) {
     return { success: false, error: 'Email is required' };
   }
@@ -127,19 +124,11 @@ export async function signUpAction(
   }
 
   try {
-    let supabase;
-    try {
-      supabase = await createServerSupabaseClient();
-    } catch (envError) {
-      const errMsg = envError instanceof Error ? envError.message : String(envError);
-      console.error('[Signup] Supabase client error:', errMsg);
-      return { success: false, error: 'Server configuration error. Please try again later.' };
-    }
+    const supabase = createSupabaseClient();
 
     const headersList = await headers();
     const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // Create user account
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
@@ -153,7 +142,6 @@ export async function signUpAction(
       return { success: false, error: signUpError.message };
     }
 
-    // If email confirmation is required
     if (EMAIL_CONFIRMATION_ENABLED) {
       return {
         success: true,
@@ -161,12 +149,10 @@ export async function signUpAction(
       };
     }
 
-    // No email confirmation - check if we got a session
     if (data.session) {
       return { success: true, requiresEmailConfirmation: false };
     }
 
-    // No session returned - try auto-login
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
@@ -182,7 +168,7 @@ export async function signUpAction(
     console.error('[Signup Exception]', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      error: 'Server configuration error. Please try again later.',
     };
   }
 }
@@ -195,25 +181,12 @@ export async function signInAction(
   password: string,
   captchaToken?: string | null
 ): Promise<AuthResult> {
-  // ENV CHECK - First line logging
-  console.error('ENV_CHECK_SUPABASE_VARS', {
-    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_URL: !!process.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
-    NODE_ENV: process.env.NODE_ENV,
-    VERCEL_ENV: process.env.VERCEL_ENV,
-  });
-
-  // Rate limit check (by IP + action)
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`login:${clientIP}`);
   if (!rateLimitResult.success) {
-    console.warn('[Rate Limit] Login blocked for IP:', clientIP);
     return { success: false, error: rateLimitResult.error };
   }
 
-  // Verify CAPTCHA (if enabled)
   const captchaResult = await verifyCaptcha(captchaToken ?? null);
   if (!captchaResult.success) {
     return { success: false, error: captchaResult.error };
@@ -230,14 +203,7 @@ export async function signInAction(
   }
 
   try {
-    let supabase;
-    try {
-      supabase = await createServerSupabaseClient();
-    } catch (envError) {
-      const errMsg = envError instanceof Error ? envError.message : String(envError);
-      console.error('[Login] Supabase client error:', errMsg);
-      return { success: false, error: 'Server configuration error. Please try again later.' };
-    }
+    const supabase = createSupabaseClient();
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
@@ -254,7 +220,7 @@ export async function signInAction(
     console.error('[Login Exception]', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      error: 'Server configuration error. Please try again later.',
     };
   }
 }
@@ -264,14 +230,7 @@ export async function signInAction(
  */
 export async function signOutAction(): Promise<AuthResult> {
   try {
-    let supabase;
-    try {
-      supabase = await createServerSupabaseClient();
-    } catch (envError) {
-      const errMsg = envError instanceof Error ? envError.message : String(envError);
-      console.error('[Logout] Supabase client error:', errMsg);
-      return { success: false, error: 'Server configuration error. Please try again later.' };
-    }
+    const supabase = createSupabaseClient();
 
     const { error } = await supabase.auth.signOut();
 
@@ -285,7 +244,7 @@ export async function signOutAction(): Promise<AuthResult> {
     console.error('[Logout Exception]', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      error: 'Server configuration error. Please try again later.',
     };
   }
 }
