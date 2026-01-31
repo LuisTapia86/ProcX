@@ -1,5 +1,8 @@
 'use server';
 
+// Force Node.js runtime for Server Actions
+export const runtime = 'nodejs';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
