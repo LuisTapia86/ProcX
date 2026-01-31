@@ -87,6 +87,16 @@ export async function signUpAction(
   password: string,
   captchaToken?: string | null
 ): Promise<AuthResult> {
+  // ENV CHECK - First line logging
+  console.error('ENV_CHECK_SUPABASE_VARS', {
+    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_URL: !!process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+  });
+
   // Rate limit check (by IP + action)
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`signup:${clientIP}`);
@@ -185,6 +195,16 @@ export async function signInAction(
   password: string,
   captchaToken?: string | null
 ): Promise<AuthResult> {
+  // ENV CHECK - First line logging
+  console.error('ENV_CHECK_SUPABASE_VARS', {
+    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_URL: !!process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+  });
+
   // Rate limit check (by IP + action)
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`login:${clientIP}`);
