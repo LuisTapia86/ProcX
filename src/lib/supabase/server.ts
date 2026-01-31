@@ -7,7 +7,11 @@ export async function createServerSupabaseClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL and Anon Key are required. Check your environment variables.');
+    const missing: string[] = [];
+    if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!supabaseAnonKey) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    console.error('[Supabase] Missing environment variables:', missing.join(', '));
+    throw new Error(`Missing env vars: ${missing.join(', ')}`);
   }
 
   const cookieStore = cookies();
@@ -40,7 +44,11 @@ export function createServiceRoleClient() {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Supabase URL and Service Role Key are required. Check your environment variables.');
+    const missing: string[] = [];
+    if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!supabaseServiceRoleKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    console.error('[Supabase] Missing environment variables:', missing.join(', '));
+    throw new Error(`Missing env vars: ${missing.join(', ')}`);
   }
 
   return createServerClient<Database>(

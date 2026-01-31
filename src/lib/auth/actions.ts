@@ -118,7 +118,8 @@ export async function signUpAction(
     try {
       supabase = await createServerSupabaseClient();
     } catch (envError) {
-      console.error('[Signup] Supabase client error:', envError);
+      const errMsg = envError instanceof Error ? envError.message : String(envError);
+      console.error('[Signup] Supabase client error:', errMsg);
       return { success: false, error: 'Server configuration error. Please try again later.' };
     }
 
@@ -210,7 +211,8 @@ export async function signInAction(
     try {
       supabase = await createServerSupabaseClient();
     } catch (envError) {
-      console.error('[Login] Supabase client error:', envError);
+      const errMsg = envError instanceof Error ? envError.message : String(envError);
+      console.error('[Login] Supabase client error:', errMsg);
       return { success: false, error: 'Server configuration error. Please try again later.' };
     }
 
@@ -243,7 +245,8 @@ export async function signOutAction(): Promise<AuthResult> {
     try {
       supabase = await createServerSupabaseClient();
     } catch (envError) {
-      console.error('[Logout] Supabase client error:', envError);
+      const errMsg = envError instanceof Error ? envError.message : String(envError);
+      console.error('[Logout] Supabase client error:', errMsg);
       return { success: false, error: 'Server configuration error. Please try again later.' };
     }
 
