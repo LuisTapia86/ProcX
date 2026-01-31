@@ -1,7 +1,5 @@
 'use server';
 
-export const runtime = 'nodejs';
-
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
