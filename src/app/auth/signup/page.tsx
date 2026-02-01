@@ -27,6 +27,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Signup] Form submitted');
 
     // Prevent double submit
     if (loading) return;
@@ -62,10 +63,12 @@ export default function SignupPage() {
     }
 
     setLoading(true);
+    console.log('[Signup] Calling signUpAction...');
 
     try {
       // Call Server Action - CAPTCHA verified server-side
       const result = await signUpAction(email, password, captchaToken);
+      console.log('[Signup] signUpAction result:', result);
 
       if (!result.success) {
         setError(result.error || 'Signup failed');
@@ -81,6 +84,7 @@ export default function SignupPage() {
       router.push('/app');
       router.refresh();
     } catch (err) {
+      console.error('[Signup] Exception:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);

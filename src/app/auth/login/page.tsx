@@ -25,6 +25,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Login] Form submitted');
 
     // Prevent double submit
     if (loading) return;
@@ -49,10 +50,12 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+    console.log('[Login] Calling signInAction...');
 
     try {
       // Call Server Action - CAPTCHA verified server-side
       const result = await signInAction(email, password, captchaToken);
+      console.log('[Login] signInAction result:', result);
 
       if (!result.success) {
         setError(result.error || 'Login failed');
@@ -63,6 +66,7 @@ export default function LoginPage() {
       router.push('/app');
       router.refresh();
     } catch (err) {
+      console.error('[Login] Exception:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
