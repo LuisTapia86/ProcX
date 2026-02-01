@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { validateSupabaseEnv } from '@/lib/supabase/env';
 import type { Database } from '@/types/database';
 
 // Server-only config - never exposed to client
@@ -21,14 +22,8 @@ export interface AuthResult {
  * Create Supabase client for Server Actions
  */
 function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase configuration missing');
-  }
-
-  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+  const { url, anon } = validateSupabaseEnv();
+  return createClient<Database>(url, anon);
 }
 
 /**
