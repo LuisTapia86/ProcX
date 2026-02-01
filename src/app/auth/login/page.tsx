@@ -1,77 +1,47 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInAction } from '@/lib/auth/actions';
-import Captcha, { isCaptchaEnabled } from '@/components/Captcha';
 
 export default function LoginPage() {
   const router = useRouter();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleCaptchaVerify = useCallback((token: string) => {
-    setCaptchaToken(token);
-  }, []);
-
-  const handleCaptchaExpire = useCallback(() => {
-    setCaptchaToken(null);
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    console.log('LOGIN_SUBMIT');
     e.preventDefault();
-    console.log('[Login] Form submitted');
-
-    // Prevent double submit
-    if (loading) return;
 
     setError('');
-
-    // Client-side validation (quick feedback)
-    if (!email.trim()) {
-      setError('Email is required');
-      return;
-    }
-
-    if (!password) {
-      setError('Password is required');
-      return;
-    }
-
-    // Check CAPTCHA on client (server will verify too)
-    if (isCaptchaEnabled() && !captchaToken) {
-      setError('Please complete the CAPTCHA');
-      return;
-    }
-
     setLoading(true);
-    console.log('[Login] Calling signInAction...');
 
     try {
-      // Call Server Action - CAPTCHA verified server-side
-      const result = await signInAction(email, password, captchaToken);
-      console.log('[Login] signInAction result:', result);
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+
+      console.log('LOGIN_CALLING_ACTION', { email });
+
+      const result = await signInAction(email, password, null);
+
+      console.log('LOGIN_RESULT', result);
 
       if (!result.success) {
         setError(result.error || 'Login failed');
         return;
       }
 
-      // Success - redirect to dashboard
       router.push('/app');
       router.refresh();
     } catch (err) {
-      console.error('[Login] Exception:', err);
+      console.error('LOGIN_ERROR', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -92,9 +62,9 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
                 disabled={loading}
@@ -108,18 +78,15 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Your password"
                 disabled={loading}
                 autoComplete="current-password"
               />
             </div>
-
-            {/* CAPTCHA - only renders if NEXT_PUBLIC_CAPTCHA_SITE_KEY is set */}
-            <Captcha onVerify={handleCaptchaVerify} onExpire={handleCaptchaExpire} />
 
             <button
               type="submit"
