@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { validateSupabaseEnv } from '@/lib/supabase/env';
 import type { Database } from '@/types/database';
@@ -167,32 +168,26 @@ export async function signUpAction(
 }
 
 /**
- * Server Action: Sign in a user
+ * Server Action: Sign in a user (FormData version for native form action)
  */
-export async function signInAction(
-  email: string,
-  password: string,
-  captchaToken?: string | null
-): Promise<AuthResult> {
+export async function signInAction(formData: FormData): Promise<void> {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`login:${clientIP}`);
   if (!rateLimitResult.success) {
-    return { success: false, error: rateLimitResult.error };
+    redirect(`/auth/login?error=${encodeURIComponent(rateLimitResult.error || 'Rate limited')}`);
   }
 
-  const captchaResult = await verifyCaptcha(captchaToken ?? null);
-  if (!captchaResult.success) {
-    return { success: false, error: captchaResult.error };
-  }
-
-  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedEmail = email?.trim().toLowerCase();
 
   if (!trimmedEmail) {
-    return { success: false, error: 'Email is required' };
+    redirect('/auth/login?error=' + encodeURIComponent('Email is required'));
   }
 
   if (!password) {
-    return { success: false, error: 'Password is required' };
+    redirect('/auth/login?error=' + encodeURIComponent('Password is required'));
   }
 
   try {
@@ -205,16 +200,13 @@ export async function signInAction(
 
     if (signInError) {
       console.error('[Login Error]', signInError);
-      return { success: false, error: signInError.message };
+      redirect(`/auth/login?error=${encodeURIComponent(signInError.message)}`);
     }
 
-    return { success: true };
+    redirect('/app');
   } catch (err) {
     console.error('[Login Exception]', err);
-    return {
-      success: false,
-      error: 'Server configuration error. Please try again later.',
-    };
+    redirect('/auth/login?error=' + encodeURIComponent('Server configuration error'));
   }
 }
 

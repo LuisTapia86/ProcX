@@ -1,47 +1,12 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { signInAction } from '@/lib/auth/actions';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    console.log('LOGIN_SUBMIT');
-    e.preventDefault();
-
-    setError('');
-    setLoading(true);
-
-    try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-
-      console.log('LOGIN_CALLING_ACTION', { email });
-
-      const result = await signInAction(email, password, null);
-
-      console.log('LOGIN_RESULT', result);
-
-      if (!result.success) {
-        setError(result.error || 'Login failed');
-        return;
-      }
-
-      router.push('/app');
-      router.refresh();
-    } catch (err) {
-      console.error('LOGIN_ERROR', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
+  const error = searchParams.error;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -55,7 +20,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={signInAction} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -67,7 +32,6 @@ export default function LoginPage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
-                disabled={loading}
                 autoComplete="email"
               />
             </div>
@@ -83,17 +47,15 @@ export default function LoginPage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Your password"
-                disabled={loading}
                 autoComplete="current-password"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             >
-              {loading ? 'Logging in...' : 'Log In'}
+              Log In
             </button>
           </form>
 
