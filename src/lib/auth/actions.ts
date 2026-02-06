@@ -1,12 +1,10 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isRedirectError } from 'next/dist/client/components/redirect';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { validateSupabaseEnv } from '@/lib/supabase/env';
-import type { Database } from '@/types/database';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // Server-only config - never exposed to client
 const EMAIL_CONFIRMATION_ENABLED = process.env.ENABLE_EMAIL_CONFIRMATION === 'true';
@@ -21,11 +19,10 @@ export interface AuthResult {
 }
 
 /**
- * Create Supabase client for Server Actions
+ * Create Supabase client for Server Actions (with cookie handling)
  */
-function createSupabaseClient() {
-  const { url, anon } = validateSupabaseEnv();
-  return createClient<Database>(url, anon);
+async function createSupabaseClient() {
+  return createServerSupabaseClient();
 }
 
 /**
@@ -119,7 +116,7 @@ export async function signUpAction(
   }
 
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
 
     const headersList = await headers();
     const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -192,7 +189,7 @@ export async function signInAction(formData: FormData): Promise<void> {
   }
 
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
@@ -219,7 +216,7 @@ export async function signInAction(formData: FormData): Promise<void> {
  */
 export async function signOutAction(): Promise<AuthResult> {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
 
     const { error } = await supabase.auth.signOut();
 

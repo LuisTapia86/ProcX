@@ -23,7 +23,7 @@ export async function createServerSupabaseClient() {
     throw new Error(`Missing env vars: ${missing.join(', ')}`);
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(
     supabaseUrl,
