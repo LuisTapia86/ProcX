@@ -4,15 +4,22 @@ import { signInAction } from '@/lib/auth/actions';
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; reset?: string };
 }) {
   const error = searchParams.error;
+  const resetSuccess = searchParams.reset === '1';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-center mb-6">Log In</h1>
+
+          {resetSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-600 p-3 rounded mb-4 text-sm">
+              Password reset successful! Please log in with your new password.
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded mb-4 text-sm">
@@ -37,9 +44,14 @@ export default function LoginPage({
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Link href="/auth/forgot-password" className="text-xs text-blue-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 name="password"
