@@ -1,17 +1,16 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AppDashboard from './AppDashboard';
 
 export default async function AppPage() {
   const supabase = await createServerSupabaseClient();
-
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Auth is enforced by layout.tsx, but TypeScript needs the check
   if (!user) {
-    redirect('/auth/login');
+    return null;
   }
 
   // Get user profile
