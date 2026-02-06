@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { validateSupabaseEnv } from '@/lib/supabase/env';
 import type { Database } from '@/types/database';
@@ -205,6 +206,9 @@ export async function signInAction(formData: FormData): Promise<void> {
 
     redirect('/app');
   } catch (err) {
+    if (isRedirectError(err)) {
+      throw err;
+    }
     console.error('[Login Exception]', err);
     redirect('/auth/login?error=' + encodeURIComponent('Server configuration error'));
   }
