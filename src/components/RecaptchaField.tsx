@@ -1,14 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Script from 'next/script';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-interface CaptchaProps {
-  onVerify: (token: string) => void;
-  onExpire?: () => void;
-}
 
 declare global {
   interface Window {
@@ -17,13 +12,26 @@ declare global {
       reset: (widgetId: number) => void;
       getResponse: (widgetId: number) => string;
     };
-    onCaptchaLoad?: () => void;
+    onRecaptchaLoad?: () => void;
   }
 }
 
-export default function Captcha({ onVerify, onExpire }: CaptchaProps) {
+/**
+ * Recaptcha field component that renders both the widget and a hidden input.
+ * The hidden input ensures the token is included in FormData for native form actions.
+ */
+export default function RecaptchaField() {
+  const [token, setToken] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<number | null>(null);
+
+  const handleVerify = useCallback((responseToken: string) => {
+    setToken(responseToken);
+  }, []);
+
+  const handleExpire = useCallback(() => {
+    setToken(null);
+  }, []);
 
   const renderCaptcha = useCallback(() => {
     if (!containerRef.current || !window.grecaptcha || !SITE_KEY) return;
@@ -31,10 +39,10 @@ export default function Captcha({ onVerify, onExpire }: CaptchaProps) {
 
     widgetIdRef.current = window.grecaptcha.render(containerRef.current, {
       sitekey: SITE_KEY,
-      callback: onVerify,
-      'expired-callback': onExpire,
+      callback: handleVerify,
+      'expired-callback': handleExpire,
     });
-  }, [onVerify, onExpire]);
+  }, [handleVerify, handleExpire]);
 
   useEffect(() => {
     // If grecaptcha is already loaded, render immediately
@@ -42,15 +50,15 @@ export default function Captcha({ onVerify, onExpire }: CaptchaProps) {
       renderCaptcha();
     } else {
       // Set callback for when script loads
-      window.onCaptchaLoad = renderCaptcha;
+      window.onRecaptchaLoad = renderCaptcha;
     }
 
     return () => {
-      window.onCaptchaLoad = undefined;
+      window.onRecaptchaLoad = undefined;
     };
   }, [renderCaptcha]);
 
-  // Don't render if no site key
+  // Don't render if no site key configured
   if (!SITE_KEY) {
     return null;
   }
@@ -58,44 +66,18 @@ export default function Captcha({ onVerify, onExpire }: CaptchaProps) {
   return (
     <>
       <Script
-        src="https://www.google.com/recaptcha/api.js?onload=onCaptchaLoad&render=explicit"
+        src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit"
         strategy="lazyOnload"
       />
       <div ref={containerRef} className="flex justify-center" />
+      <input type="hidden" name="captchaToken" value={token ?? ''} />
     </>
   );
 }
 
 /**
- * Verify CAPTCHA token with server
- */
-export async function verifyCaptchaToken(token: string | null): Promise<{ success: boolean; error?: string }> {
-  // If no site key configured, CAPTCHA is disabled
-  if (!SITE_KEY) {
-    return { success: true };
-  }
-
-  if (!token) {
-    return { success: false, error: 'Please complete the CAPTCHA' };
-  }
-
-  try {
-    const response = await fetch('/api/verify-captcha', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    });
-
-    const data = await response.json();
-    return data;
-  } catch {
-    return { success: false, error: 'CAPTCHA verification failed' };
-  }
-}
-
-/**
  * Check if CAPTCHA is enabled (client-side check based on site key presence)
  */
-export function isCaptchaEnabled(): boolean {
+export function isRecaptchaEnabled(): boolean {
   return Boolean(SITE_KEY);
 }

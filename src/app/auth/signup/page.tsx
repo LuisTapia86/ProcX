@@ -1,33 +1,24 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signUpAction } from '@/lib/auth/actions';
-import Captcha, { isCaptchaEnabled } from '@/components/Captcha';
+import RecaptchaField, { isRecaptchaEnabled } from '@/components/RecaptchaField';
 
 export default function SignupPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleCaptchaVerify = useCallback((token: string) => {
-    setCaptchaToken(token);
-  }, []);
-
-  const handleCaptchaExpire = useCallback(() => {
-    setCaptchaToken(null);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Signup] Form submitted');
 
     // Prevent double submit
     if (loading) return;
@@ -56,19 +47,21 @@ export default function SignupPage() {
       return;
     }
 
+    // Get captcha token from hidden input
+    const formData = new FormData(formRef.current!);
+    const captchaToken = formData.get('captchaToken') as string | null;
+
     // Check CAPTCHA on client (server will verify too)
-    if (isCaptchaEnabled() && !captchaToken) {
+    if (isRecaptchaEnabled() && !captchaToken) {
       setError('Please complete the CAPTCHA');
       return;
     }
 
     setLoading(true);
-    console.log('[Signup] Calling signUpAction...');
 
     try {
       // Call Server Action - CAPTCHA verified server-side
       const result = await signUpAction(email, password, captchaToken);
-      console.log('[Signup] signUpAction result:', result);
 
       if (!result.success) {
         setError(result.error || 'Signup failed');
@@ -109,7 +102,7 @@ export default function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -158,8 +151,7 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* CAPTCHA - only renders if NEXT_PUBLIC_CAPTCHA_SITE_KEY is set */}
-            <Captcha onVerify={handleCaptchaVerify} onExpire={handleCaptchaExpire} />
+            <RecaptchaField />
 
             <button
               type="submit"

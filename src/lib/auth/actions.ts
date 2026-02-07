@@ -9,8 +9,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 // Server-only config - never exposed to client
 const EMAIL_CONFIRMATION_ENABLED = process.env.ENABLE_EMAIL_CONFIRMATION === 'true';
 const CAPTCHA_ENABLED = process.env.ENABLE_CAPTCHA === 'true';
-const CAPTCHA_SECRET_KEY = process.env.CAPTCHA_SECRET_KEY;
-const CAPTCHA_VERIFY_URL = process.env.CAPTCHA_VERIFY_URL || 'https://www.google.com/recaptcha/api/siteverify';
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 export interface AuthResult {
   success: boolean;
@@ -49,7 +49,7 @@ async function verifyCaptcha(token: string | null): Promise<{ success: boolean; 
     return { success: true };
   }
 
-  if (!CAPTCHA_SECRET_KEY) {
+  if (!RECAPTCHA_SECRET_KEY) {
     console.error('[CAPTCHA] Secret key not configured');
     return { success: false, error: 'CAPTCHA not configured' };
   }
@@ -59,11 +59,11 @@ async function verifyCaptcha(token: string | null): Promise<{ success: boolean; 
   }
 
   try {
-    const response = await fetch(CAPTCHA_VERIFY_URL, {
+    const response = await fetch(RECAPTCHA_VERIFY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        secret: CAPTCHA_SECRET_KEY,
+        secret: RECAPTCHA_SECRET_KEY,
         response: token,
       }),
     });
@@ -171,11 +171,18 @@ export async function signUpAction(
 export async function signInAction(formData: FormData): Promise<void> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const captchaToken = formData.get('captchaToken') as string | null;
 
   const clientIP = await getClientIP();
   const rateLimitResult = checkRateLimit(`login:${clientIP}`);
   if (!rateLimitResult.success) {
     redirect(`/auth/login?error=${encodeURIComponent(rateLimitResult.error || 'Rate limited')}`);
+  }
+
+  // Verify CAPTCHA
+  const captchaResult = await verifyCaptcha(captchaToken);
+  if (!captchaResult.success) {
+    redirect(`/auth/login?error=${encodeURIComponent(captchaResult.error || 'CAPTCHA required')}`);
   }
 
   const trimmedEmail = email?.trim().toLowerCase();

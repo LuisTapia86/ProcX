@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { signInAction } from '@/lib/auth/actions';
+import RecaptchaField from '@/components/RecaptchaField';
 
 export default function LoginPage({
   searchParams,
@@ -62,6 +63,8 @@ export default function LoginPage({
                 autoComplete="current-password"
               />
             </div>
+
+            <RecaptchaField />
 
             <button
               type="submit"
