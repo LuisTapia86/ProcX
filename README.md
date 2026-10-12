@@ -1,38 +1,53 @@
-# ProcX - Anti-Procrastination App
+# ProcX — Anti-Procrastination App
 
-ProcX is a web application that helps users beat procrastination through daily challenges and skill-based rewards.
+ProcX is a portfolio prototype that explores how daily challenges, accountability, streaks, and points could help users reduce procrastination and build consistent habits.
 
-## Features
+> **Project status:** Work in progress — not a production service. ProcX was not commercially launched. Real-money subscriptions, prize distribution, KYC, and payout flows were not completed or validated for production.
 
-- **User Authentication**: Email/password authentication via Supabase
-- **Daily Challenges**: Users can join up to 3 challenges and do daily check-ins
-- **Points System**: Earn points for check-ins with streak bonuses
-- **Monthly Leaderboard**: Top 100 users displayed
-- **Reward Pool**: 80% of subscriptions go to monthly prizes
-- **Skill-Based Rewards**: Winners selected by points ranking, not luck
-- **Admin Panel**: Manage challenges, periods, and payouts
-- **Bilingual**: Spanish and English support
+## Live preview
 
-## Tech Stack
+[View the prototype interface](https://proc-x.vercel.app)
 
-- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS
-- **Backend**: Next.js API Routes, Server Actions
-- **Database**: Supabase (PostgreSQL with RLS)
-- **Payments**: Stripe (MXN currency)
-- **Validation**: Zod
+The deployed version is for demonstration purposes only. Do not enter real payment information, identity documents, or other sensitive personal data.
 
----
+## Implemented in the prototype
 
-## Setup Instructions
+- **Authentication:** Email/password flows using Supabase Auth
+- **Challenge tracking:** Challenge catalog, enrollment, and daily check-ins
+- **Points and streaks:** Points calculation with streak bonuses
+- **Leaderboard:** Monthly ranking interface
+- **Administration:** Interfaces for managing challenges and reward periods
+- **Database security:** PostgreSQL schema with Supabase Row Level Security policies
+- **Internationalization:** Spanish and English interface
+- **Payments exploration:** Stripe Checkout, customer portal, and webhook code written for test mode
+
+## Planned or incomplete
+
+- Production-ready subscriptions and billing lifecycle
+- Real-money reward pools and payouts
+- End-to-end KYC verification
+- Legal and regulatory validation
+- Automated tests, monitoring, and production hardening
+
+## Tech stack
+
+- **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes and Server Actions
+- **Database and authentication:** Supabase and PostgreSQL
+- **Validation:** Zod
+- **Payments prototype:** Stripe test mode
+- **Deployment:** Vercel
+
+## Local development
 
 ### Prerequisites
 
-- Node.js 20+ installed
-- npm or yarn
-- Supabase account (free tier works)
-- Stripe account (test mode works)
+- Node.js 20 or newer
+- npm
+- A Supabase development project
+- Optional Stripe test-mode account
 
-### Step 1: Install Dependencies
+### Installation
 
 ```bash
 git clone https://github.com/LuisTapia86/ProcX.git
@@ -40,227 +55,35 @@ cd ProcX
 npm install
 ```
 
-### Step 2: Create Supabase Project
+Copy `.env.example` to `.env.local` and add development or test credentials only.
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Wait for the project to be ready
-3. Go to **Settings > API** and copy:
-   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY`
-
-### Step 3: Run Database Migrations
-
-1. Go to Supabase **SQL Editor**
-2. Copy and paste the contents of `supabase/migrations/001_initial_schema.sql`
-3. Click **Run**
-4. Copy and paste the contents of `supabase/migrations/002_rls_policies.sql`
-5. Click **Run**
-
-### Step 4: Create Storage Bucket (for KYC documents)
-
-1. Go to Supabase **Storage**
-2. Create a new bucket called `kyc-documents`
-3. Set it to **Private**
-4. Add these policies in the bucket settings:
-   - Allow users to upload to their own folder
-   - Allow admins to view all files
-
-### Step 5: Setup Stripe
-
-1. Go to [stripe.com](https://stripe.com) and create an account
-2. Go to **Developers > API keys** and copy:
-   - Publishable key → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-   - Secret key → `STRIPE_SECRET_KEY`
-
-3. Create a Product:
-   - Go to **Products > Add Product**
-   - Name: "ProcX Monthly Subscription"
-   - Price: 99 MXN, recurring monthly
-   - Copy the Price ID → `STRIPE_PRICE_ID`
-
-4. Setup Webhook:
-   - Go to **Developers > Webhooks**
-   - Add endpoint: `https://your-domain.com/api/webhooks/stripe`
-   - Select events:
-     - `checkout.session.completed`
-     - `customer.subscription.updated`
-     - `customer.subscription.deleted`
-     - `invoice.paid`
-     - `invoice.payment_failed`
-   - Copy Webhook Secret → `STRIPE_WEBHOOK_SECRET`
-
-### Step 6: Create Environment File
-
-Create a `.env.local` file in the project root:
-
-```bash
-# Copy from .env.example
-cp .env.example .env.local
-```
-
-Then edit `.env.local` with your values:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-STRIPE_PRICE_ID=price_xxx
-
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Step 7: Run the App
+Run the development server:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`.
 
----
+## Project structure
 
-## Creating the First Admin User
+```text
+src/
+├── app/                 # Pages, API routes, authentication and administration
+├── components/          # Shared interface components
+├── lib/                 # Supabase, Stripe, security and internationalization
+└── types/               # Database types
 
-1. Go to `http://localhost:3000/auth/signup` and create a new account
-2. Verify your email (check Supabase **Authentication > Users**)
-3. Go to Supabase **SQL Editor** and run:
-
-```sql
-UPDATE profiles
-SET role = 'admin'
-WHERE email = 'your-admin-email@example.com';
+supabase/
+└── migrations/          # Database schema and Row Level Security policies
 ```
 
-4. Refresh the app - you should now see an "Admin" link in Settings
+## Security notes
 
----
+The prototype includes Row Level Security policies, server-side administrator checks, Stripe webhook signature verification code, and configurable CAPTCHA and rate-limiting mechanisms.
 
-## Project Structure
-
-```
-ProcX/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── admin/           # Admin API routes
-│   │   │   ├── auth/callback/   # Auth callback
-│   │   │   ├── checkin/         # Check-in API
-│   │   │   ├── stripe/          # Stripe checkout/portal
-│   │   │   └── webhooks/stripe/ # Stripe webhooks
-│   │   ├── admin/               # Admin pages
-│   │   ├── app/                 # Main app pages
-│   │   ├── auth/                # Login/signup
-│   │   ├── privacy/             # Privacy policy
-│   │   ├── terms/               # Terms of service
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx             # Landing page
-│   ├── components/
-│   │   └── AppLayout.tsx        # App navigation
-│   ├── lib/
-│   │   ├── i18n/                # Translations
-│   │   ├── supabase/            # Supabase clients
-│   │   └── stripe.ts            # Stripe config
-│   ├── types/
-│   │   └── database.ts          # TypeScript types
-│   └── middleware.ts            # Auth middleware
-├── supabase/
-│   └── migrations/              # SQL migrations
-├── public/
-├── .env.example
-├── package.json
-├── tailwind.config.js
-└── tsconfig.json
-```
-
----
-
-## Points System
-
-| Difficulty | Points per Check-in |
-|------------|---------------------|
-| Very Easy  | 5                   |
-| Easy       | 8                   |
-| Medium     | 12                  |
-| Hard       | 18                  |
-| Very Hard  | 25                  |
-| Extreme    | 35                  |
-
-### Streak Bonuses (one-time per challenge)
-
-| Day | Bonus Points |
-|-----|--------------|
-| 3   | +10          |
-| 5   | +20          |
-| 10  | +50          |
-| 15  | +80          |
-| 21  | +120         |
-| 30  | +200         |
-
----
-
-## Prize Distribution
-
-| Pool Size       | Winners | Distribution                           |
-|-----------------|---------|----------------------------------------|
-| < $5,000 MXN    | 3       | 50% / 30% / 20%                        |
-| $5,000-$19,999  | 5       | 35% / 25% / 18% / 12% / 10%            |
-| $20,000+        | 10      | 25% / 18% / 14% / 11% / 9% / 7% / 6% / 5% / 3% / 2% |
-
----
-
-## Monthly Workflow (Admin)
-
-1. **Start of month**: Create a new period in Admin > Periods
-2. **During month**: Users subscribe, complete challenges, earn points
-3. **End of month**: Close the period to generate winners automatically
-4. **After closing**: Contact winners for KYC verification
-5. **Manual payout**: Transfer prizes via bank transfer within 5 days
-
----
-
-## Security Features
-
-- Row Level Security (RLS) on all database tables
-- Server-side admin verification
-- Stripe webhook signature verification
-- Idempotent webhook processing
-- Rate limiting on check-in endpoints
-- Private KYC document storage
-
----
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push code to GitHub
-2. Connect to Vercel
-3. Add environment variables
-4. Deploy
-
-### Environment Variables for Production
-
-Make sure to update:
-- `NEXT_PUBLIC_APP_URL` to your production domain
-- Use production Stripe keys (not test keys)
-- Update Stripe webhook endpoint
-
----
-
-## Support
-
-For questions or issues, check the codebase documentation or contact the development team.
-
----
+These controls have not undergone an independent security audit. The application must not be used to process real payments, prizes, identity documents, or sensitive user information in its current state.
 
 ## License
 
-Private - All rights reserved.
-
-<!-- rebuild: 2026-02-07-v2 -->
+Source available for portfolio review. All rights reserved.
