@@ -35,7 +35,8 @@ ProcX is a web application that helps users beat procrastination through daily c
 ### Step 1: Install Dependencies
 
 ```bash
-cd C:\Users\PC\Desktop\proyectos_python\ProcX
+git clone https://github.com/LuisTapia86/ProcX.git
+cd ProcX
 npm install
 ```
 
